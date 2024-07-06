@@ -1,6 +1,11 @@
 import os, shutil
 
-
+def copyfile(src, dst, len_buff, callback=None):
+    len_buff = 64 * 1024 if os.path.getsize(src) < 50 * 1024 * 1024 else 1024 * 1024
+    with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
+            buffer = fsrc.read(len_buff)
+            if callback:
+                callback(len(buffer))
 class FileExplorer:
     def __init__(self, path = 'C:\\'):
         self.current_path = path
