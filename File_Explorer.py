@@ -1,4 +1,4 @@
-import os, shutil
+import os, shutil, win32api, json
 
 def copyfile(src, dst, len_buff, callback=None):
     len_buff = 64 * 1024 if os.path.getsize(src) < 50 * 1024 * 1024 else 1024 * 1024
@@ -154,12 +154,74 @@ class FileExplorer:
             else:
                 self.move_file(self.copy_path, os.path.join(self.current_path, self.copy_path[self.copy_path.rfind('\\')+1:]))
     '''********************************************************************************************************************'''
+    def organizer(self):
+        fileCategories = {}
+        try:
+            with open("File_Categories.json", mode="r") as file:
+                fileCategories = json.load(file)
+        except:
+            fileCategories = {
+                "Documents": {"Text Documents" : [".txt", ".doc", ".docx", ".pdf", ".rtf", ".odt", ".md", ".wps"], 
+                            "Spreadsheet Documents" : [".xls", ".xlsx", ".csv", ".ods", ".tsv"],
+                            "Presentation Documents" : [".ppt", ".pptx", ".odp"],
+                            "E-Books": [".epub", ".mobi", ".azw"],
+                            "Web Documents": [".html", ".htm", ".xhtml", ".xml", ".json"],
+                            "Other": [".tex", ".log", ".msg", ".pages"]},
+                
+                "Images": {"Raster Images": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif", ".webp", ".ico"],
+                        "Vector Images": [".svg", ".ai", ".eps", ".ps"],
+                        "3D and Specialized Images": [".psd", ".xcf", ".cr2", ".nef", ".raw", ".arw", ".dng", ".orf", ".heif", ".heic"],
+                        "Other": [".dds", ".jp2", ".jxr", ".hdr", ".exr", ".apng", ".tga"]},
+                "Videos": ['.mp4', '.flv', '.avi', '.hevc', '.vob', '.webm', '.mov', '.mpeg', '.3gp', '.swf', '.mkv', '.h265', '.asf', '.rm', '.prores', '.mpg', '.ogv', '.ts', '.dvr-ms', '.avs', '.3dm'],
+                "Music": ['.mp3', '.aac', '.flac', '.wma', '.aif', '.aiff', '.mod', '.wv', '.s3m', '.it', '.mpc', '.kar', '.pcm', '.spx', '.opus', '.dts', '.midi', '.ogg', '.ts', '.mp3', '.tak', '.ra', '.alac', '.xm', '.wav'],
+                "Compressed": ['.zip', '.gzip', '.bz2', '.7z', '.tar.gz', '.tar.bz2', '.tar.xz', '.rar', '.iso', '.rpm', '.lzma', '.zpaq', '.lz', '.z', '.arj', '.tar', '.cpio', '.war', '.tar.Z', '.uue', '.sit', '.dmg', '.ace', '.jar'],
+                "Code": ['.tcl', '.js', '.sql', '.scala', '.tcl', '.hbs', '.ps1', '.cobol', '.bash', '.scala', '.rpy', '.hlsl', '.dart', '.cu', '.go', '.f90', '.py', '.m', '.css', '.c', '.pl', '.hbs', '.pl', '.java', '.h', '.sh', '.zig', '.yaml', '.psm1', '.r', '.swift', '.md', '.cpp', '.vue', '.sass', '.lua', '.v', '.f95', '.perl', '.vhd', '.obj', '.elixir', '.scss', '.yaml', '.tex', '.ruby', '.vhdl', '.java', '.hpp', '.ipynb'],
+                "Programs": {"Windows": [".exe", ".bat", ".cmd", ".msi", ".ps1", ".vbs", ".com", ".wsf"], 
+                            "Mac": [".app", ".command", ".dmg", ".pkg"],
+                            "Linux": [".bin", ".sh", ".run", ".deb", ".rpm"],
+                            "Android": [".apk"]},
+                "Other": []
+            }
+            with open("File_Categories.json", mode="w") as file:
+                json.dump(fileCategories, file, indent = 4)
+
+        path = self.current_path
+
+        def getFileType(extension):
+            for key in fileCategories.keys():
+                if isinstance(fileCategories[key], dict):
+                    for subKey in fileCategories[key].keys():
+                        if extension.lower() in fileCategories[key][subKey]:
+                            return (key, subKey)
+                else:
+                    if extension.lower() in fileCategories[key]:
+                        return (key, None)
+            fileCategories["Other"].append(extension)
+            with open("File_Categories.json", mode="w") as file:
+                json.dump(fileCategories, file, indent = 4)
+            return ("Other", None)
+
+        for file in os.listdir(path):
+            if os.path.isdir(os.path.join(path, file)):
+                continue
+            fileType = getFileType(os.path.splitext(file)[-1])
+            destinationPath = ""
+            sourcePath = os.path.join(path, file)
+            if fileType[1] != None:
+                destinationPath = os.path.join(path, fileType[0], fileType[1])
+                if not os.path.exists(destinationPath):
+                    os.makedirs(destinationPath)
+            else:
+                destinationPath = os.path.join(path, fileType[0])
+                if not os.path.exists(destinationPath):
+                    os.makedirs(destinationPath)
+            print(sourcePath, destinationPath)
+            self.move_file(sourcePath, os.path.join(destinationPath, file))
 ''''********************************************************************************************************************'''
 def get_local_disks():
     return os.listdrives()
 '''********************************************************************************************************************'''
 def get_local_disk_size(disk):
-    import win32api
     drive = disk
     free_bytes, total_bytes, _ = win32api.GetDiskFreeSpaceEx(drive)
     return ((total_bytes - free_bytes), free_bytes, total_bytes)

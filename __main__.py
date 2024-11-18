@@ -132,6 +132,7 @@ x - Cut file or directory
 v - Paste file or directory
 m - More options
 r - Refresh
+o - Organize files
     ''')
 def sub_menu(explorer, selected_file, directory):
     options_list=['Get File Owner',
@@ -472,6 +473,9 @@ def main():
         elif pressed_key == 'r':
             refresh = True
             selected_file = window_counter = 1
+        elif pressed_key == 'o':
+            refresh = True
+            explorer.organizer()
         elif pressed_key == 'h':
             refresh = True
             selected_file = window_counter = 1
